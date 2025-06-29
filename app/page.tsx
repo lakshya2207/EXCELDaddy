@@ -1097,7 +1097,7 @@ Return ONLY valid JSON, no explanation.`;
                   type="text"
                   value={ruleInput}
                   onChange={(e) => setRuleInput(e.target.value)}
-                  placeholder="e.g., 'tasks with duration 1 2 3 must run together' or 'Limit max load of WorkerGroup Sales to 3 slots per phase'"
+                  placeholder="e.g., &apos;tasks with duration 1 2 3 must run together&apos; or &apos;Limit max load of WorkerGroup Sales to 3 slots per phase&apos;"
                   className="w-full border rounded px-3 py-2"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && ruleInput.trim()) {
@@ -1125,17 +1125,17 @@ Return ONLY valid JSON, no explanation.`;
                 <div>
                   <strong className="text-blue-700">Task Rules:</strong>
                   <ul className="text-blue-600 mt-1 space-y-1">
-                    <li>• "tasks with duration 1 2 3 must run together"</li>
-                    <li>• "tasks in category CatA must run together"</li>
-                    <li>• "Task T20 can only run in phases 2 to 4"</li>
+                    <li>• &ldquo;tasks with duration 1 2 3 must run together&rdquo;</li>
+                    <li>• &ldquo;tasks in category CatA must run together&rdquo;</li>
+                    <li>• &ldquo;Task T20 can only run in phases 2 to 4&rdquo;</li>
                   </ul>
                 </div>
                 <div>
                   <strong className="text-blue-700">Worker Rules:</strong>
                   <ul className="text-blue-600 mt-1 space-y-1">
-                    <li>• "Limit max load of WorkerGroup Sales to 3 slots per phase"</li>
-                    <li>• "Minimum 2 shared slots for WorkerGroup A"</li>
-                    <li>• "Senior workers can only work in phases 1-3"</li>
+                    <li>• &ldquo;Limit max load of WorkerGroup Sales to 3 slots per phase&rdquo;</li>
+                    <li>• &ldquo;Minimum 2 shared slots for WorkerGroup A&rdquo;</li>
+                    <li>• &ldquo;Senior workers can only work in phases 1-3&rdquo;</li>
                   </ul>
                 </div>
               </div>
@@ -1214,11 +1214,11 @@ Return ONLY valid JSON, no explanation.`;
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">3.</span>
-              <span>Use natural language search in each tab (e.g., "highest priority clients")</span>
+              <span>Use natural language search in each tab (e.g., &ldquo;highest priority clients&rdquo;)</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">4.</span>
-              <span>Add business rules in plain English (e.g., "tasks with duration 1 2 3 must run together")</span>
+              <span>Add business rules in plain English (e.g., &ldquo;tasks with duration 1 2 3 must run together&rdquo;)</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">5.</span>
@@ -1254,7 +1254,7 @@ Return ONLY valid JSON, no explanation.`;
         <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h4 className="font-medium text-blue-800 mb-2">📤 Export Information:</h4>
           <div className="text-sm text-blue-700 space-y-2">
-            <p><strong>Download Rules:</strong> Click "Download rules.json" in the Rules Engine section to get your business rules in JSON format.</p>
+            <p><strong>Download Rules:</strong> Click &ldquo;Download rules.json&rdquo; in the Rules Engine section to get your business rules in JSON format.</p>
             <p><strong>Data Export:</strong> Clean, validated data is automatically available for export to your resource allocation system.</p>
             <p><strong>Integration:</strong> The exported files are ready to be used by downstream allocation and scheduling tools.</p>
           </div>
