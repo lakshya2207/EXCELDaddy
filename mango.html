@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIF Generator Prototype</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 100%;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem; /* Rounded corners */
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .input-group input[type="text"]:focus,
+        .input-group input[type="file"]:focus {
+            outline: none;
+            border-color: #6366f1; /* Tailwind indigo-500 */
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-image: linear-gradient(to right, #6366f1, #8b5cf6); /* Gradient from indigo to violet */
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 0.5rem; /* Rounded corners */
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4); /* Shadow for button */
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 1.5rem auto;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            display: none; /* Hidden by default */
+            color: #333;
+        }
+        .message-box.info {
+            background-color: #e0f2fe; /* Light blue */
+            border: 1px solid #90cdf4; /* Blue border */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Light red */
+            border: 1px solid #ef4444; /* Red border */
+            color: #ef4444;
+        }
+        .gif-results {
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+        .gif-item {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            width: calc(50% - 0.75rem); /* Two columns on larger screens */
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .gif-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .gif-item p {
+            font-size: 1rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        .gif-item a {
+            display: inline-block;
+            background-color: #6366f1;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .gif-item a:hover {
+            background-color: #4f46e5;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .gif-item {
+                width: 100%; /* Single column on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">GIF Generator Prototype</h1>
+
+        <div class="input-group">
+            <label for="prompt">GIF Theme Prompt:</label>
+            <input type="text" id="prompt" placeholder="e.g., funny moments, sad quotes, motivational clips" class="focus:border-indigo-500">
+        </div>
+
+        <div class="input-group">
+            <label for="youtubeUrl">YouTube URL (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ):</label>
+            <input type="text" id="youtubeUrl" placeholder="Enter YouTube video URL" class="focus:border-indigo-500">
+        </div>
+
+        <div class="input-group">
+            <label for="videoUpload">Upload MP4 Video (Limited functionality in prototype):</label>
+            <input type="file" id="videoUpload" accept="video/mp4" class="focus:border-indigo-500">
+            <p class="text-sm text-gray-500 mt-[-10px] mb-4">Note: Full video processing for uploaded files is not supported in this frontend-only prototype.</p>
+        </div>
+
+        <button id="generateBtn">Generate GIFs</button>
+
+        <div id="loadingSpinner" class="loading-spinner"></div>
+        <div id="messageBox" class="message-box"></div>
+
+        <div id="gifResults" class="gif-results">
+            <!-- Generated GIFs will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const promptInput = document.getElementById('prompt');
+            const youtubeUrlInput = document.getElementById('youtubeUrl');
+            const videoUploadInput = document.getElementById('videoUpload');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const messageBox = document.getElementById('messageBox');
+            const gifResultsContainer = document.getElementById('gifResults');
+
+            // Sample YouTube transcript for demonstration purposes.
+            // In a real application, you would use a backend service or an API
+            // to fetch the actual transcript for the given YouTube URL.
+            const sampleYoutubeTranscript = [
+                { text: "We're no strangers to love", start: 0, duration: 2 },
+                { text: "You know the rules and so do I", start: 3, duration: 3 },
+                { text: "A full commitment's what I'm thinking of", start: 6, duration: 3 },
+                { text: "You wouldn't get this from any other guy", start: 9, duration: 3 },
+                { text: "I just wanna tell you how I'm feeling", start: 12, duration: 3 },
+                { text: "Gotta make you understand", start: 15, duration: 2 },
+                { text: "Never gonna give you up", start: 18, duration: 2 },
+                { text: "Never gonna let you down", start: 20, duration: 2 },
+                { text: "Never gonna run around and desert you", start: 22, duration: 3 },
+                { text: "Never gonna make you cry", start: 25, duration: 2 },
+                { text: "Never gonna say goodbye", start: 27, duration: 2 },
+                { text: "Never gonna tell a lie and hurt you", start: 29, duration: 3 }
+            ];
+
+            // Sample video ID for the hardcoded transcript
+            const DEMO_YOUTUBE_VIDEO_ID = 'dQw4w9WgXcQ';
+
+            // Function to display messages to the user
+            function showMessage(message, type = 'info') {
+                messageBox.textContent = message;
+                messageBox.className = `message-box ${type} block`;
+            }
+
+            // Function to clear messages
+            function clearMessage() {
+                messageBox.className = 'message-box hidden';
+                messageBox.textContent = '';
+            }
+
+            // Function to simulate GIF generation and display
+            async function generateGIFs() {
+                clearMessage();
+                gifResultsContainer.innerHTML = '';
+                loadingSpinner.style.display = 'block';
+                generateBtn.disabled = true;
+
+                const prompt = promptInput.value.toLowerCase().trim();
+                const youtubeUrl = youtubeUrlInput.value.trim();
+                const uploadedFile = videoUploadInput.files[0];
+
+                if (!prompt) {
+                    showMessage("Please enter a GIF theme prompt.", "error");
+                    loadingSpinner.style.display = 'none';
+                    generateBtn.disabled = false;
+                    return;
+                }
+
+                if (!youtubeUrl && !uploadedFile) {
+                    showMessage("Please provide either a YouTube URL or upload an MP4 video.", "error");
+                    loadingSpinner.style.display = 'none';
+                    generateBtn.disabled = false;
+                    return;
+                }
+
+                if (uploadedFile) {
+                    // This section demonstrates the limitation for MP4 uploads.
+                    // Full video processing (transcription, clipping, GIF creation) for uploaded
+                    // MP4 files is not feasible purely client-side in a basic prototype.
+                    showMessage("Processing MP4 uploads directly in the browser for transcription and GIF generation is highly complex and not supported by this prototype. Please try with a YouTube URL for a simulated experience.", "error");
+                    loadingSpinner.style.display = 'none';
+                    generateBtn.disabled = false;
+                    return;
+                }
+
+                if (youtubeUrl) {
+                    let videoId = '';
+                    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+                    const match = youtubeUrl.match(youtubeRegex);
+                    if (match && match[1]) {
+                        videoId = match[1];
+                    }
+
+                    if (videoId !== DEMO_YOUTUBE_VIDEO_ID) {
+                        showMessage(`For demonstration purposes, please use the YouTube URL: https://www.youtube.com/watch?v=${DEMO_YOUTUBE_VIDEO_ID} to see transcript analysis in action.`, "info");
+                        loadingSpinner.style.display = 'none';
+                        generateBtn.disabled = false;
+                        return;
+                    }
+
+                    // Simulate fetching transcript
+                    showMessage("Fetching YouTube transcript (simulated)...", "info");
+                    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+
+                    const transcript = sampleYoutubeTranscript;
+
+                    // Analyze transcript + prompt to identify 2-3 key caption-worthy lines
+                    // This is a simplified logic for demonstration:
+                    // It tries to find lines matching prompt keywords or just picks the first few if no strong match.
+                    let selectedCaptions = [];
+                    const promptKeywords = prompt.split(' ').filter(word => word.length > 2); // Ignore very short words
+
+                    if (promptKeywords.length > 0) {
+                        const matchedLines = transcript.filter(line =>
+                            promptKeywords.some(keyword => line.text.toLowerCase().includes(keyword))
+                        );
+                        // Pick up to 3 unique matched lines
+                        selectedCaptions = matchedLines.slice(0, 3);
+                    }
+
+                    // If no lines matched keywords, just pick the first 3 lines
+                    if (selectedCaptions.length === 0) {
+                        selectedCaptions = transcript.slice(0, 3);
+                        showMessage("No specific keywords found in transcript matching your prompt. Displaying first few lines as examples.", "info");
+                    } else if (selectedCaptions.length < 3) {
+                         // If less than 3 matched, fill up with more lines from transcript
+                        const additionalLinesNeeded = 3 - selectedCaptions.length;
+                        const existingText = new Set(selectedCaptions.map(c => c.text));
+                        let addedCount = 0;
+                        for(const line of transcript) {
+                            if (!existingText.has(line.text) && addedCount < additionalLinesNeeded) {
+                                selectedCaptions.push(line);
+                                existingText.add(line.text);
+                                addedCount++;
+                            }
+                        }
+                    }
+
+                    if (selectedCaptions.length === 0) {
+                        showMessage("Could not find any suitable captions for the given prompt and video.", "error");
+                        loadingSpinner.style.display = 'none';
+                        generateBtn.disabled = false;
+                        return;
+                    }
+
+                    showMessage("Generating placeholder GIFs...", "info");
+                    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate GIF generation time
+
+                    // Display generated placeholder GIFs
+                    selectedCaptions.forEach((caption, index) => {
+                        const gifItem = document.createElement('div');
+                        gifItem.className = 'gif-item';
+
+                        // Use placehold.co to create a placeholder image with the caption text
+                        // The dimensions (300x200) are arbitrary for demonstration.
+                        // For a real app, you'd generate actual video frames or use a GIF library.
+                        const imageUrl = `https://placehold.co/300x200/6366f1/ffffff?text=${encodeURIComponent(caption.text)}`;
+
+                        gifItem.innerHTML = `
+                            <img src="${imageUrl}" alt="Generated GIF ${index + 1}">
+                            <p>"${caption.text}"</p>
+                            <a href="${imageUrl}" download="captioned_gif_${index + 1}.png">Download GIF</a>
+                        `;
+                        gifResultsContainer.appendChild(gifItem);
+                    });
+
+                    showMessage("GIFs generated successfully (placeholders).", "info");
+                }
+
+                loadingSpinner.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+
+            generateBtn.addEventListener('click', generateGIFs);
+        });
+    </script>
+</body>
+</html>
