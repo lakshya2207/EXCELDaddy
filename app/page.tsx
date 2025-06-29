@@ -1025,13 +1025,12 @@ Return ONLY valid JSON, no explanation.`;
                       }}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Try: '&apos;
+                      💡 Try : 
                       {name.toLowerCase().includes("client")
-                        ? "clients with priority > 3"
+                        ? " clients with priority > 3"
                         : name.toLowerCase().includes("task")
-                        ? "tasks with duration > 2"
-                        : "workers with skill1"}
-                      &apos;'
+                        ? " tasks with duration > 2"
+                        : " workers with skill1"}
                     </p>
 
                     {/* Enhanced search examples */}
