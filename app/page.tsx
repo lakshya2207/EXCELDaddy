@@ -759,15 +759,15 @@ Return ONLY valid JSON, no explanation.`;
             <h3 className="font-medium text-blue-700 mb-2">🔍 Search & Filter</h3>
             <ul className="text-blue-600 space-y-1">
               <li>• Use natural language search</li>
-              <li>• "highest priority clients"</li>
-              <li>• "tasks with duration &gt; 2"</li>
+              <li>• {"\"highest priority clients\""}</li>
+              <li>• {"\"tasks with duration > 2\""}</li>
             </ul>
           </div>
           <div className="p-3 bg-white rounded border">
             <h3 className="font-medium text-blue-700 mb-2">📝 Add Rules</h3>
             <ul className="text-blue-600 space-y-1">
               <li>• Type rules in plain English</li>
-              <li>• "tasks with duration 1 2 3 must run together"</li>
+              <li>• {"\"tasks with duration 1 2 3 must run together\""}</li>
               <li>• AI converts to proper format</li>
             </ul>
           </div>
@@ -969,23 +969,23 @@ Return ONLY valid JSON, no explanation.`;
                       <div className="text-xs text-yellow-700 space-y-1">
                         {name.toLowerCase().includes('client') && (
                           <>
-                            <p>• "highest priority clients"</p>
-                            <p>• "clients in group A"</p>
-                            <p>• "clients requesting task T1"</p>
+                            <p>• {"\"highest priority clients\""}</p>
+                            <p>• {"\"clients in group A\""}</p>
+                            <p>• {"\"clients requesting task T1\""}</p>
                           </>
                         )}
                         {name.toLowerCase().includes('task') && (
                           <>
-                            <p>• "tasks with duration &gt; 2"</p>
-                            <p>• "tasks in phase 2"</p>
-                            <p>• "tasks requiring skill1"</p>
+                            <p>• {"\"tasks with duration > 2\""}</p>
+                            <p>• {"\"tasks in phase 2\""}</p>
+                            <p>• {"\"tasks requiring skill1\""}</p>
                           </>
                         )}
                         {name.toLowerCase().includes('worker') && (
                           <>
-                            <p>• "workers with skill2"</p>
-                            <p>• "senior workers"</p>
-                            <p>• "workers available in slot 2"</p>
+                            <p>• {"\"workers with skill2\""}</p>
+                            <p>• {"\"senior workers\""}</p>
+                            <p>• {"\"workers available in slot 2\""}</p>
                           </>
                         )}
                       </div>
