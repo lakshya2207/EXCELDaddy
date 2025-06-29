@@ -376,9 +376,9 @@ export default function StepperDemo() {
     const searchQuery = searchQueries[sheetName] || "";
     if (!searchQuery.trim() || !workSheets[sheetName]) return;
     setSearchingSheet(sheetName);
-    
+
     // Clear any existing filtered data for this tab before performing new search
-    setFilteredRows(prev => {
+    setFilteredRows((prev) => {
       if (prev && prev[sheetName]) {
         const newState = { ...prev };
         delete newState[sheetName];
@@ -387,15 +387,15 @@ export default function StepperDemo() {
       }
       return prev;
     });
-    
+
     // Get real data from the actual sheet
     const realData = workSheets[sheetName];
     const sampleRows = realData.slice(0, 3); // Take first 3 rows as sample data
-    
+
     // Define schema and sample data for each sheet
     let schema = "";
     let responseExamples = "";
-    
+
     if (sheetName.toLowerCase().includes("client")) {
       schema = `Client: { ClientID: string, ClientName: string, PriorityLevel: number, RequestedTaskIDs: string[], GroupTag: string, AttributesJSON: object }`;
       responseExamples = `
@@ -442,7 +442,7 @@ Expected response format examples:
 4. For "workers in group A": 
    (row) => row.WorkerGroup === "A"`;
     }
-    
+
     const prompt = `You are a JavaScript coding assistant. Your role is to generate a JavaScript filter function for an array named ${sheetName.toLowerCase()}, where each element has the following structure:
 ${schema}
 
@@ -486,7 +486,7 @@ Please return ONLY a JavaScript filter function (no explanation, no code blocks,
                 return false;
               }
             });
-            setFilteredRows(prevFilteredRows => {
+            setFilteredRows((prevFilteredRows) => {
               const newState = { ...prevFilteredRows, [sheetName]: filtered };
               console.log("New filteredRows state:", newState);
               return newState;
@@ -518,20 +518,37 @@ Please return ONLY a JavaScript filter function (no explanation, no code blocks,
   // Rule processing functions
   const processNaturalLanguageRule = async (ruleText: string) => {
     if (!ruleText.trim()) return;
-    
+
     setIsProcessingRule(true);
-    
+
     // Get available data for context
-    const taskIds = workSheets[Object.keys(workSheets).find(name => name.toLowerCase().includes('task')) || '']?.map(row => row.TaskID) || [];
-    const workerGroups = workSheets[Object.keys(workSheets).find(name => name.toLowerCase().includes('worker')) || '']?.map(row => row.WorkerGroup) || [];
-    const tasksData = workSheets[Object.keys(workSheets).find(name => name.toLowerCase().includes('task')) || ''] || [];
-    
+    const taskIds =
+      workSheets[
+        Object.keys(workSheets).find((name) =>
+          name.toLowerCase().includes("task")
+        ) || ""
+      ]?.map((row) => row.TaskID) || [];
+    const workerGroups =
+      workSheets[
+        Object.keys(workSheets).find((name) =>
+          name.toLowerCase().includes("worker")
+        ) || ""
+      ]?.map((row) => row.WorkerGroup) || [];
+    const tasksData =
+      workSheets[
+        Object.keys(workSheets).find((name) =>
+          name.toLowerCase().includes("task")
+        ) || ""
+      ] || [];
+
     // First, check if this is a task filtering rule (like "tasks with duration 1 2 3")
-    if (ruleText.toLowerCase().includes('tasks with') || 
-        ruleText.toLowerCase().includes('tasks that') ||
-        ruleText.toLowerCase().includes('tasks in') ||
-        ruleText.toLowerCase().includes('tasks requiring') ||
-        ruleText.toLowerCase().includes('tasks having')) {
+    if (
+      ruleText.toLowerCase().includes("tasks with") ||
+      ruleText.toLowerCase().includes("tasks that") ||
+      ruleText.toLowerCase().includes("tasks in") ||
+      ruleText.toLowerCase().includes("tasks requiring") ||
+      ruleText.toLowerCase().includes("tasks having")
+    ) {
       // Use Puter AI to find matching tasks
       const filterPrompt = `You are a task filtering assistant. Find tasks that match the given criteria.
 
@@ -562,13 +579,17 @@ Return ONLY the filter function, no explanation.`;
           // @ts-ignore
           const response = await window.puter.ai.chat(filterPrompt);
           let filterCode = response;
-          
-          if (typeof response === 'object' && response.message && response.message.content) {
+
+          if (
+            typeof response === "object" &&
+            response.message &&
+            response.message.content
+          ) {
             filterCode = response.message.content;
           }
-          
+
           console.log("[RuleAI] Filter response:", filterCode);
-          
+
           // Extract and execute the filter function
           const filterFn = extractFilterFunctionFromPuterResponse(filterCode);
           if (filterFn) {
@@ -579,19 +600,21 @@ Return ONLY the filter function, no explanation.`;
                 return false;
               }
             });
-            
+
             if (matchingTasks.length >= 2) {
               const coRunRule = {
-                type: 'coRun',
+                type: "coRun",
                 tasks: matchingTasks.map((task: any) => task.TaskID),
-                id: Date.now()
+                id: Date.now(),
               };
-              
-              setRules(prev => [...prev, coRunRule]);
+
+              setRules((prev) => [...prev, coRunRule]);
               setRuleInput("");
               console.log("[RuleAI] Co-run rule created:", coRunRule);
             } else {
-              alert(`Found ${matchingTasks.length} matching tasks. Need at least 2 tasks for a co-run rule.`);
+              alert(
+                `Found ${matchingTasks.length} matching tasks. Need at least 2 tasks for a co-run rule.`
+              );
             }
           } else {
             alert("Could not parse filter function from AI response");
@@ -607,12 +630,12 @@ Return ONLY the filter function, no explanation.`;
       }
       return;
     }
-    
+
     // Original rule processing for other types
     const prompt = `You are a rule parsing assistant. Convert natural language rules into JSON format.
 
-Available Task IDs: ${taskIds.join(', ')}
-Available Worker Groups: ${[...new Set(workerGroups)].join(', ')}
+Available Task IDs: ${taskIds.join(", ")}
+Available Worker Groups: ${[...new Set(workerGroups)].join(", ")}
 
 Supported rule types:
 1. coRun: Tasks that must run together
@@ -635,22 +658,30 @@ Return ONLY valid JSON, no explanation.`;
         // @ts-ignore
         const response = await window.puter.ai.chat(prompt);
         let ruleJson = response;
-        
-        if (typeof response === 'object' && response.message && response.message.content) {
+
+        if (
+          typeof response === "object" &&
+          response.message &&
+          response.message.content
+        ) {
           ruleJson = response.message.content;
         }
-        
+
         console.log("[RuleAI] Raw response:", ruleJson);
-        
+
         // Extract JSON from response
         const jsonMatch = ruleJson.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsedRule = JSON.parse(jsonMatch[0]);
-          
+
           // Validate the rule
-          const validationResult = validateRule(parsedRule, taskIds, workerGroups);
+          const validationResult = validateRule(
+            parsedRule,
+            taskIds,
+            workerGroups
+          );
           if (validationResult.isValid) {
-            setRules(prev => [...prev, { ...parsedRule, id: Date.now() }]);
+            setRules((prev) => [...prev, { ...parsedRule, id: Date.now() }]);
             setRuleInput("");
             console.log("[RuleAI] Rule added successfully:", parsedRule);
           } else {
@@ -670,29 +701,50 @@ Return ONLY valid JSON, no explanation.`;
     }
   };
 
-  const validateRule = (rule: any, taskIds: string[], workerGroups: string[]) => {
+  const validateRule = (
+    rule: any,
+    taskIds: string[],
+    workerGroups: string[]
+  ) => {
     switch (rule.type) {
-      case 'coRun':
-        if (!rule.tasks || !Array.isArray(rule.tasks) || rule.tasks.length < 2) {
-          return { isValid: false, error: "coRun rule must have at least 2 tasks" };
+      case "coRun":
+        if (
+          !rule.tasks ||
+          !Array.isArray(rule.tasks) ||
+          rule.tasks.length < 2
+        ) {
+          return {
+            isValid: false,
+            error: "coRun rule must have at least 2 tasks",
+          };
         }
         if (!rule.tasks.every((task: string) => taskIds.includes(task))) {
           return { isValid: false, error: "All tasks must exist in the data" };
         }
         break;
-      case 'loadLimit':
+      case "loadLimit":
         if (!rule.workerGroup || !workerGroups.includes(rule.workerGroup)) {
-          return { isValid: false, error: "Worker group must exist in the data" };
+          return {
+            isValid: false,
+            error: "Worker group must exist in the data",
+          };
         }
         if (!rule.maxSlots || rule.maxSlots < 1) {
-          return { isValid: false, error: "maxSlots must be a positive number" };
+          return {
+            isValid: false,
+            error: "maxSlots must be a positive number",
+          };
         }
         break;
-      case 'phaseWindow':
+      case "phaseWindow":
         if (!rule.task || !taskIds.includes(rule.task)) {
           return { isValid: false, error: "Task must exist in the data" };
         }
-        if (!rule.phases || !Array.isArray(rule.phases) || rule.phases.length === 0) {
+        if (
+          !rule.phases ||
+          !Array.isArray(rule.phases) ||
+          rule.phases.length === 0
+        ) {
           return { isValid: false, error: "phases must be a non-empty array" };
         }
         break;
@@ -703,16 +755,18 @@ Return ONLY valid JSON, no explanation.`;
   };
 
   const deleteRule = (ruleId: number) => {
-    setRules(prev => prev.filter(rule => rule.id !== ruleId));
+    setRules((prev) => prev.filter((rule) => rule.id !== ruleId));
   };
 
   const downloadRules = () => {
     const rulesData = rules.map(({ id, ...rule }) => rule); // Remove internal IDs
-    const blob = new Blob([JSON.stringify(rulesData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(rulesData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'rules.json';
+    a.download = "rules.json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -721,16 +775,18 @@ Return ONLY valid JSON, no explanation.`;
 
   const getRuleDescription = (rule: any) => {
     switch (rule.type) {
-      case 'coRun':
-        return `Tasks ${rule.tasks?.join(', ')} must run together`;
-      case 'loadLimit':
+      case "coRun":
+        return `Tasks ${rule.tasks?.join(", ")} must run together`;
+      case "loadLimit":
         return `Limit ${rule.workerGroup} to ${rule.maxSlots} slots per phase`;
-      case 'slotRestriction':
+      case "slotRestriction":
         return `Minimum ${rule.minSlots} shared slots for ${rule.workerGroup}`;
-      case 'phaseWindow':
-        return `Task ${rule.task} can only run in phases ${rule.phases?.join(', ')}`;
+      case "phaseWindow":
+        return `Task ${rule.task} can only run in phases ${rule.phases?.join(
+          ", "
+        )}`;
       default:
-        return 'Unknown rule type';
+        return "Unknown rule type";
     }
   };
 
@@ -745,7 +801,9 @@ Return ONLY valid JSON, no explanation.`;
 
       {/* Quick Start Guide */}
       <Card className="w-full p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-        <h2 className="text-xl font-semibold text-blue-800 mb-3">🚀 Quick Start Guide</h2>
+        <h2 className="text-xl font-semibold text-blue-800 mb-3">
+          🚀 Quick Start Guide
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div className="p-3 bg-white rounded border">
             <h3 className="font-medium text-blue-700 mb-2">📁 Upload Data</h3>
@@ -756,18 +814,20 @@ Return ONLY valid JSON, no explanation.`;
             </ul>
           </div>
           <div className="p-3 bg-white rounded border">
-            <h3 className="font-medium text-blue-700 mb-2">🔍 Search & Filter</h3>
+            <h3 className="font-medium text-blue-700 mb-2">
+              🔍 Search & Filter
+            </h3>
             <ul className="text-blue-600 space-y-1">
               <li>• Use natural language search</li>
-              <li>• {"\"highest priority clients\""}</li>
-              <li>• {"\"tasks with duration > 2\""}</li>
+              <li>• {'"highest priority clients"'}</li>
+              <li>• {'"tasks with duration > 2"'}</li>
             </ul>
           </div>
           <div className="p-3 bg-white rounded border">
             <h3 className="font-medium text-blue-700 mb-2">📝 Add Rules</h3>
             <ul className="text-blue-600 space-y-1">
               <li>• Type rules in plain English</li>
-              <li>• {"\"tasks with duration 1 2 3 must run together\""}</li>
+              <li>• {'"tasks with duration 1 2 3 must run together"'}</li>
               <li>• AI converts to proper format</li>
             </ul>
           </div>
@@ -816,7 +876,8 @@ Return ONLY valid JSON, no explanation.`;
               className="sm:max-w-xs"
             />
             <p className="text-xs text-gray-500 mt-1">
-              💡 Supported formats: Excel (.xlsx) or CSV files with Clients, Workers, and Tasks sheets
+              💡 Supported formats: Excel (.xlsx) or CSV files with Clients,
+              Workers, and Tasks sheets
             </p>
           </div>
           <div className="flex-1">
@@ -827,14 +888,17 @@ Return ONLY valid JSON, no explanation.`;
               onChange={handleLinkChange}
             />
             <p className="text-xs text-gray-500 mt-1">
-              💡 Example: https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit
+              💡 Example:
+              https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit
             </p>
           </div>
         </div>
 
         {/* Data Format Guide */}
         <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-800 mb-2">📋 Expected Data Format:</h4>
+          <h4 className="font-medium text-blue-800 mb-2">
+            📋 Expected Data Format:
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <strong className="text-blue-700">Clients Sheet:</strong>
@@ -857,7 +921,7 @@ Return ONLY valid JSON, no explanation.`;
               <ul className="text-blue-600 mt-1 space-y-1">
                 <li>• TaskID, TaskName, Category, Duration</li>
                 <li>• RequiredSkills (comma-separated)</li>
-                <li>• PreferredPhases (e.g., "1-3" or [2,4,5])</li>
+                <li>• {'PreferredPhases (e.g., "1-3" or [2,4,5]'}</li>
               </ul>
             </div>
           </div>
@@ -899,7 +963,7 @@ Return ONLY valid JSON, no explanation.`;
                   to save or Escape to cancel.
                 </p>
               )}
-              
+
               {/* Validation Tips */}
               {!validationResult.isValid && (
                 <div className="mt-3 p-3 bg-red-50 rounded border border-red-200">
@@ -961,31 +1025,40 @@ Return ONLY valid JSON, no explanation.`;
                       }}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Try: "{name.toLowerCase().includes('client') ? 'clients with priority > 3' : name.toLowerCase().includes('task') ? 'tasks with duration &gt; 2' : 'workers with skill1'}"
+                      💡 Try: '&apos;
+                      {name.toLowerCase().includes("client")
+                        ? "clients with priority > 3"
+                        : name.toLowerCase().includes("task")
+                        ? "tasks with duration > 2"
+                        : "workers with skill1"}
+                      &apos;'
                     </p>
+
                     {/* Enhanced search examples */}
                     <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                      <p className="text-xs text-yellow-800 font-medium mb-1">🔍 Search Examples:</p>
+                      <p className="text-xs text-yellow-800 font-medium mb-1">
+                        🔍 Search Examples:
+                      </p>
                       <div className="text-xs text-yellow-700 space-y-1">
-                        {name.toLowerCase().includes('client') && (
+                        {name.toLowerCase().includes("client") && (
                           <>
-                            <p>• {"\"highest priority clients\""}</p>
-                            <p>• {"\"clients in group A\""}</p>
-                            <p>• {"\"clients requesting task T1\""}</p>
+                            <p>• {'"highest priority clients"'}</p>
+                            <p>• {'"clients in group A"'}</p>
+                            <p>• {'"clients requesting task T1"'}</p>
                           </>
                         )}
-                        {name.toLowerCase().includes('task') && (
+                        {name.toLowerCase().includes("task") && (
                           <>
-                            <p>• {"\"tasks with duration > 2\""}</p>
-                            <p>• {"\"tasks in phase 2\""}</p>
-                            <p>• {"\"tasks requiring skill1\""}</p>
+                            <p>• {'"tasks with duration > 2"'}</p>
+                            <p>• {'"tasks in phase 2"'}</p>
+                            <p>• {'"tasks requiring skill1"'}</p>
                           </>
                         )}
-                        {name.toLowerCase().includes('worker') && (
+                        {name.toLowerCase().includes("worker") && (
                           <>
-                            <p>• {"\"workers with skill2\""}</p>
-                            <p>• {"\"senior workers\""}</p>
-                            <p>• {"\"workers available in slot 2\""}</p>
+                            <p>• {'"workers with skill2"'}</p>
+                            <p>• {'"senior workers"'}</p>
+                            <p>• {'"workers available in slot 2"'}</p>
                           </>
                         )}
                       </div>
@@ -998,15 +1071,17 @@ Return ONLY valid JSON, no explanation.`;
                   >
                     Search
                   </button>
-                  {(filteredRows && filteredRows[name]?.length > 0) && (
+                  {filteredRows && filteredRows[name]?.length > 0 && (
                     <button
                       className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                       onClick={() => {
-                        setSearchQueries(q => ({ ...q, [name]: "" }));
-                        setFilteredRows(prev => {
+                        setSearchQueries((q) => ({ ...q, [name]: "" }));
+                        setFilteredRows((prev) => {
                           const newState = { ...prev };
                           delete newState[name];
-                          return Object.keys(newState).length === 0 ? null : newState;
+                          return Object.keys(newState).length === 0
+                            ? null
+                            : newState;
                         });
                       }}
                     >
@@ -1017,44 +1092,77 @@ Return ONLY valid JSON, no explanation.`;
                 <p>
                   {/* { (filteredRows && filteredRows[name]?.length && searchQueries[name]?.length)? filteredRows[name]?.length:'69'} */}
                   {/* {name} */}
-                  {filteredRows && filteredRows[name]?.length > 0 && searchQueries[name]?.trim().length > 0 && (
-                    <span className="ml-2 text-sm text-green-600">
-                      (Showing {filteredRows[name].length} filtered results)
-                    </span>
-                  )}
+                  {filteredRows &&
+                    filteredRows[name]?.length > 0 &&
+                    searchQueries[name]?.trim().length > 0 && (
+                      <span className="ml-2 text-sm text-green-600">
+                        (Showing {filteredRows[name].length} filtered results)
+                      </span>
+                    )}
                 </p>
                 {(() => {
                   console.log(`[DEBUG] Tab: ${name}`);
                   console.log(`[DEBUG] filteredRows:`, filteredRows);
-                  console.log(`[DEBUG] filteredRows[name]:`, filteredRows?.[name]);
-                  console.log(`[DEBUG] filteredRows[name]?.length:`, filteredRows?.[name]?.length);
-                  console.log(`[DEBUG] searchQueries[name]:`, searchQueries[name]);
-                  console.log(`[DEBUG] searchQueries[name]?.length:`, searchQueries[name]?.length);
-                  console.log(`[DEBUG] Condition result:`, filteredRows && filteredRows[name]?.length > 0 && searchQueries[name]?.length > 0);
-                  
+                  console.log(
+                    `[DEBUG] filteredRows[name]:`,
+                    filteredRows?.[name]
+                  );
+                  console.log(
+                    `[DEBUG] filteredRows[name]?.length:`,
+                    filteredRows?.[name]?.length
+                  );
+                  console.log(
+                    `[DEBUG] searchQueries[name]:`,
+                    searchQueries[name]
+                  );
+                  console.log(
+                    `[DEBUG] searchQueries[name]?.length:`,
+                    searchQueries[name]?.length
+                  );
+                  console.log(
+                    `[DEBUG] Condition result:`,
+                    filteredRows &&
+                      filteredRows[name]?.length > 0 &&
+                      searchQueries[name]?.length > 0
+                  );
+
                   // Show filtered data ONLY if:
                   // 1. We have filtered data for THIS specific tab
                   // 2. We have a search query for THIS specific tab
                   // 3. The search query is not empty
-                  const hasFilteredDataForThisTab = filteredRows && 
-                    filteredRows[name] && 
+                  const hasFilteredDataForThisTab =
+                    filteredRows &&
+                    filteredRows[name] &&
                     filteredRows[name].length > 0;
-                  const hasSearchQueryForThisTab = searchQueries[name] && 
+                  const hasSearchQueryForThisTab =
+                    searchQueries[name] &&
                     searchQueries[name].trim().length > 0;
-                  
-                  const shouldShowFiltered = hasFilteredDataForThisTab && hasSearchQueryForThisTab;
-                  
-                  console.log(`[DEBUG] hasFilteredDataForThisTab:`, hasFilteredDataForThisTab);
-                  console.log(`[DEBUG] hasSearchQueryForThisTab:`, hasSearchQueryForThisTab);
-                  console.log(`[DEBUG] shouldShowFiltered:`, shouldShowFiltered);
-                  
+
+                  const shouldShowFiltered =
+                    hasFilteredDataForThisTab && hasSearchQueryForThisTab;
+
+                  console.log(
+                    `[DEBUG] hasFilteredDataForThisTab:`,
+                    hasFilteredDataForThisTab
+                  );
+                  console.log(
+                    `[DEBUG] hasSearchQueryForThisTab:`,
+                    hasSearchQueryForThisTab
+                  );
+                  console.log(
+                    `[DEBUG] shouldShowFiltered:`,
+                    shouldShowFiltered
+                  );
+
                   return shouldShowFiltered ? (
                     <SimpleDataTable
                       key={`filtered-${name}`}
                       data={filteredRows[name]}
                       validationErrors={getSheetValidationErrors(name)}
                       sheetName={name}
-                      onDataChange={(newData) => handleDataChange(name, newData)}
+                      onDataChange={(newData) =>
+                        handleDataChange(name, newData)
+                      }
                     />
                   ) : (
                     <SimpleDataTable
@@ -1062,7 +1170,9 @@ Return ONLY valid JSON, no explanation.`;
                       data={rows}
                       validationErrors={getSheetValidationErrors(name)}
                       sheetName={name}
-                      onDataChange={(newData) => handleDataChange(name, newData)}
+                      onDataChange={(newData) =>
+                        handleDataChange(name, newData)
+                      }
                     />
                   );
                 })()}
@@ -1090,23 +1200,26 @@ Return ONLY valid JSON, no explanation.`;
 
           {/* Rule Input */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Add New Rule</h3>
+            <h3 className="text-lg font-medium text-gray-800 mb-3">
+              Add New Rule
+            </h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <input
                   type="text"
                   value={ruleInput}
                   onChange={(e) => setRuleInput(e.target.value)}
-                  placeholder="e.g., &apos;tasks with duration 1 2 3 must run together&apos; or &apos;Limit max load of WorkerGroup Sales to 3 slots per phase&apos;"
+                  placeholder="e.g., 'tasks with duration 1 2 3 must run together' or 'Limit max load of WorkerGroup Sales to 3 slots per phase'"
                   className="w-full border rounded px-3 py-2"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && ruleInput.trim()) {
+                    if (e.key === "Enter" && ruleInput.trim()) {
                       processNaturalLanguageRule(ruleInput);
                     }
                   }}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  💡 Press Enter to add rule. AI will understand natural language and convert to proper format.
+                  💡 Press Enter to add rule. AI will understand natural
+                  language and convert to proper format.
                 </p>
               </div>
               <button
@@ -1114,28 +1227,44 @@ Return ONLY valid JSON, no explanation.`;
                 disabled={!ruleInput.trim() || isProcessingRule}
                 className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {isProcessingRule ? 'Processing...' : 'Add Rule'}
+                {isProcessingRule ? "Processing..." : "Add Rule"}
               </button>
             </div>
-            
+
             {/* Rule Examples */}
             <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-              <h4 className="font-medium text-blue-800 mb-2">📝 Rule Examples:</h4>
+              <h4 className="font-medium text-blue-800 mb-2">
+                📝 Rule Examples:
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div>
                   <strong className="text-blue-700">Task Rules:</strong>
                   <ul className="text-blue-600 mt-1 space-y-1">
-                    <li>• &ldquo;tasks with duration 1 2 3 must run together&rdquo;</li>
-                    <li>• &ldquo;tasks in category CatA must run together&rdquo;</li>
-                    <li>• &ldquo;Task T20 can only run in phases 2 to 4&rdquo;</li>
+                    <li>
+                      • &ldquo;tasks with duration 1 2 3 must run
+                      together&rdquo;
+                    </li>
+                    <li>
+                      • &ldquo;tasks in category CatA must run together&rdquo;
+                    </li>
+                    <li>
+                      • &ldquo;Task T20 can only run in phases 2 to 4&rdquo;
+                    </li>
                   </ul>
                 </div>
                 <div>
                   <strong className="text-blue-700">Worker Rules:</strong>
                   <ul className="text-blue-600 mt-1 space-y-1">
-                    <li>• &ldquo;Limit max load of WorkerGroup Sales to 3 slots per phase&rdquo;</li>
-                    <li>• &ldquo;Minimum 2 shared slots for WorkerGroup A&rdquo;</li>
-                    <li>• &ldquo;Senior workers can only work in phases 1-3&rdquo;</li>
+                    <li>
+                      • &ldquo;Limit max load of WorkerGroup Sales to 3 slots
+                      per phase&rdquo;
+                    </li>
+                    <li>
+                      • &ldquo;Minimum 2 shared slots for WorkerGroup A&rdquo;
+                    </li>
+                    <li>
+                      • &ldquo;Senior workers can only work in phases 1-3&rdquo;
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -1144,9 +1273,13 @@ Return ONLY valid JSON, no explanation.`;
 
           {/* Rules List */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-800">Current Rules ({rules.length})</h3>
+            <h3 className="text-lg font-medium text-gray-800">
+              Current Rules ({rules.length})
+            </h3>
             {rules.length === 0 ? (
-              <p className="text-gray-500 italic">No rules added yet. Add your first rule above.</p>
+              <p className="text-gray-500 italic">
+                No rules added yet. Add your first rule above.
+              </p>
             ) : (
               <div className="space-y-3">
                 {rules.map((rule) => (
@@ -1182,9 +1315,15 @@ Return ONLY valid JSON, no explanation.`;
           {/* Live JSON Preview */}
           {rules.length > 0 && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-800 mb-3">Rules JSON Preview</h3>
+              <h3 className="text-lg font-medium text-gray-800 mb-3">
+                Rules JSON Preview
+              </h3>
               <pre className="bg-white p-4 rounded border overflow-x-auto text-sm">
-                {JSON.stringify(rules.map(({ id, ...rule }) => rule), null, 2)}
+                {JSON.stringify(
+                  rules.map(({ id, ...rule }) => rule),
+                  null,
+                  2
+                )}
               </pre>
             </div>
           )}
@@ -1199,30 +1338,46 @@ Return ONLY valid JSON, no explanation.`;
         <p className="text-gray-700">
           Export your rules and data, and deploy the final output.
         </p>
-        
+
         {/* Usage Guide */}
         <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-          <h4 className="font-medium text-green-800 mb-2">🚀 How to Use ExcelDaddy:</h4>
+          <h4 className="font-medium text-green-800 mb-2">
+            🚀 How to Use ExcelDaddy:
+          </h4>
           <div className="text-sm text-green-700 space-y-2">
             <div className="flex items-start gap-2">
               <span className="font-bold">1.</span>
-              <span>Upload your Excel/CSV file or paste a Google Sheets link above</span>
+              <span>
+                Upload your Excel/CSV file or paste a Google Sheets link above
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">2.</span>
-              <span>Review validation errors (red cells) and click to edit them inline</span>
+              <span>
+                Review validation errors (red cells) and click to edit them
+                inline
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">3.</span>
-              <span>Use natural language search in each tab (e.g., &ldquo;highest priority clients&rdquo;)</span>
+              <span>
+                Use natural language search in each tab (e.g., &ldquo;highest
+                priority clients&rdquo;)
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">4.</span>
-              <span>Add business rules in plain English (e.g., &ldquo;tasks with duration 1 2 3 must run together&rdquo;)</span>
+              <span>
+                Add business rules in plain English (e.g., &ldquo;tasks with
+                duration 1 2 3 must run together&rdquo;)
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">5.</span>
-              <span>Download clean data and rules.json for your resource allocation system</span>
+              <span>
+                Download clean data and rules.json for your resource allocation
+                system
+              </span>
             </div>
           </div>
         </div>
@@ -1252,11 +1407,24 @@ Return ONLY valid JSON, no explanation.`;
 
         {/* Export Information */}
         <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-800 mb-2">📤 Export Information:</h4>
+          <h4 className="font-medium text-blue-800 mb-2">
+            📤 Export Information:
+          </h4>
           <div className="text-sm text-blue-700 space-y-2">
-            <p><strong>Download Rules:</strong> Click &ldquo;Download rules.json&rdquo; in the Rules Engine section to get your business rules in JSON format.</p>
-            <p><strong>Data Export:</strong> Clean, validated data is automatically available for export to your resource allocation system.</p>
-            <p><strong>Integration:</strong> The exported files are ready to be used by downstream allocation and scheduling tools.</p>
+            <p>
+              <strong>Download Rules:</strong> Click &ldquo;Download
+              rules.json&rdquo; in the Rules Engine section to get your business
+              rules in JSON format.
+            </p>
+            <p>
+              <strong>Data Export:</strong> Clean, validated data is
+              automatically available for export to your resource allocation
+              system.
+            </p>
+            <p>
+              <strong>Integration:</strong> The exported files are ready to be
+              used by downstream allocation and scheduling tools.
+            </p>
           </div>
         </div>
       </Card>
